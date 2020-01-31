@@ -1,6 +1,5 @@
 import { AxiosRequestConfig, AxiosPromise, AxiosResponse } from '../types'
 import { parseHeaders } from '../helpers/headers'
-import { transformResponse } from '../helpers/data'
 import { createError } from '../helpers/error'
 import { isURLSameOrigin } from '../helpers/url'
 import { isFormData } from '../helpers/util'
@@ -12,7 +11,7 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
       url,
       data = null,
       method = 'get',
-      headers,
+      headers = {},
       responseType,
       timeout,
       cancelToken,
@@ -62,7 +61,7 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
         const responseHeaders = parseHeaders(request.getAllResponseHeaders())
         const reponseData = responseType !== 'text' ? request.response : request.responseText
         const response: AxiosResponse = {
-          data: transformResponse(reponseData),
+          data: reponseData,
           status: request.status,
           statusText: request.statusText,
           headers: responseHeaders,
@@ -116,10 +115,17 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
 
     function processCancel(): void {
       if (cancelToken) {
-        cancelToken.promise.then(reason => {
-          request.abort()
-          reject(reason)
-        })
+        cancelToken.promise
+          .then(reason => {
+            request.abort()
+            reject(reason)
+          })
+          .catch(() =>
+            /* istanbul ignore next */
+            {
+              // do nothing
+            }
+          )
       }
     }
 
